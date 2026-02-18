@@ -5,10 +5,12 @@ export function middleware(request: NextRequest) {
   const host = request.headers.get("host") || "";
   const hostname = host.split(":")[0].toLowerCase();
 
-  // Determine space from subdomain
+  // Determine space from subdomain or custom domain
   let spaceId = "default";
   if (hostname.endsWith(".rswag.online")) {
     spaceId = hostname.replace(".rswag.online", "");
+  } else if (hostname === "fungiswag.jeffemmett.com") {
+    spaceId = "fungiflows";
   }
   // Local dev: check for space query param as override
   if (hostname === "localhost" || hostname === "127.0.0.1") {
