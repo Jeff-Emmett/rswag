@@ -1,0 +1,37 @@
+# Development overrides - use with: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  db:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  backend:
+    volumes:
+      # Mount source for hot reload
+      - ./backend/app:/app/app:ro
+      # Mount designs from in-repo designs dir
+      - ./designs:/app/designs:ro
+      - ./config:/app/config:ro
+    environment:
+      - DEBUG=true
+      - POD_SANDBOX_MODE=true
+    ports:
+      - "8000:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8000/api
+    ports:
+      - "3000:3000"
+
+networks:
+  rswag-internal:
+    driver: bridge
+  traefik-public:
+    driver: bridge  # Override external for local dev

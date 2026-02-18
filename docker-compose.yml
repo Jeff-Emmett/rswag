@@ -1,0 +1,99 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: rswag-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rswag
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-devpassword}
+      POSTGRES_DB: rswag
+    volumes:
+      - rswag-db-data:/var/lib/postgresql/data
+    networks:
+      - rswag-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rswag"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for sessions/cache
+  redis:
+    image: redis:7-alpine
+    container_name: rswag-redis
+    restart: unless-stopped
+    volumes:
+      - rswag-redis-data:/data
+    networks:
+      - rswag-internal
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rswag-backend
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://rswag:${DB_PASSWORD:-devpassword}@db:5432/rswag
+      - REDIS_URL=redis://redis:6379
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - PRODIGI_API_KEY=${PRODIGI_API_KEY}
+      - PRINTFUL_API_TOKEN=${PRINTFUL_API_TOKEN}
+      - POD_SANDBOX_MODE=${POD_SANDBOX_MODE:-true}
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-me}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      - DESIGNS_PATH=/app/designs
+      - CONFIG_PATH=/app/config
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./designs:/app/designs
+      - ./config:/app/config:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - rswag-internal
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rswag-api.rule=Host(`rswag.online`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.rswag-api.entrypoints=web"
+      - "traefik.http.services.rswag-api.loadbalancer.server.port=8000"
+      - "traefik.docker.network=traefik-public"
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000/api}
+        - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+    container_name: rswag-frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    networks:
+      - rswag-internal
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rswag-web.rule=Host(`rswag.online`)"
+      - "traefik.http.routers.rswag-web.entrypoints=web"
+      - "traefik.http.services.rswag-web.loadbalancer.server.port=3000"
+      - "traefik.docker.network=traefik-public"
+
+volumes:
+  rswag-db-data:
+  rswag-redis-data:
+
+networks:
+  rswag-internal:
+    driver: bridge
+  traefik-public:
+    external: true

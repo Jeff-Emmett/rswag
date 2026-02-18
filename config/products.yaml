@@ -1,0 +1,232 @@
+# rSwag Product Catalog Configuration
+# Maps design types to POD provider products
+
+defaults:
+  color_profile: sRGB
+  resolution: 300
+  format: png
+
+# Sticker Products
+stickers:
+  small:
+    name: "3×3 Vinyl Sticker"
+    dimensions:
+      width: 3
+      height: 3
+      unit: inches
+    pixels:
+      width: 900
+      height: 900
+    providers:
+      prodigi:
+        sku: "GLOBAL-STI-KIS-3X3"
+        variants:
+          - id: matte
+            name: "Matte Finish"
+          - id: gloss
+            name: "Gloss Finish"
+        base_cost: 1.20
+      printful:
+        sku: 358  # Kiss-cut stickers
+        variants:
+          - id: white
+            name: "White"
+        base_cost: 1.50
+
+  medium:
+    name: "4×4 Vinyl Sticker"
+    dimensions:
+      width: 4
+      height: 4
+      unit: inches
+    pixels:
+      width: 1200
+      height: 1200
+    providers:
+      prodigi:
+        sku: "GLOBAL-STI-KIS-4X4"
+        variants:
+          - id: matte
+            name: "Matte Finish"
+          - id: gloss
+            name: "Gloss Finish"
+        base_cost: 1.80
+
+  large:
+    name: "6×6 Vinyl Sticker"
+    dimensions:
+      width: 6
+      height: 6
+      unit: inches
+    pixels:
+      width: 1800
+      height: 1800
+    providers:
+      prodigi:
+        sku: "GLOBAL-STI-KIS-6X6"
+        base_cost: 2.50
+
+# Apparel Products
+apparel:
+  tshirt:
+    name: "Unisex T-Shirt"
+    print_areas:
+      front:
+        dimensions:
+          width: 12
+          height: 16
+          unit: inches
+        pixels:
+          width: 3600
+          height: 4800
+      chest:
+        dimensions:
+          width: 4
+          height: 4
+          unit: inches
+        pixels:
+          width: 1200
+          height: 1200
+    providers:
+      printful:
+        sku: 71  # Bella + Canvas 3001
+        sizes: [S, M, L, XL, 2XL, 3XL]
+        colors:
+          - id: black
+            name: "Black"
+            hex: "#0a0a0a"
+          - id: white
+            name: "White"
+            hex: "#ffffff"
+          - id: heather_charcoal
+            name: "Heather Charcoal"
+            hex: "#4a4a4a"
+          - id: forest_green
+            name: "Forest Green"
+            hex: "#2d4a3e"
+          - id: maroon
+            name: "Maroon"
+            hex: "#5a2d2d"
+        base_cost:
+          S: 9.25
+          M: 9.25
+          L: 9.25
+          XL: 9.25
+          2XL: 11.25
+          3XL: 13.25
+
+  hoodie:
+    name: "Unisex Hoodie"
+    print_areas:
+      front:
+        dimensions:
+          width: 14
+          height: 16
+          unit: inches
+        pixels:
+          width: 4200
+          height: 4800
+    providers:
+      printful:
+        sku: 146  # Bella + Canvas 3719
+        sizes: [S, M, L, XL, 2XL]
+        colors:
+          - id: black
+            name: "Black"
+          - id: dark_grey_heather
+            name: "Dark Grey Heather"
+        base_cost:
+          S: 23.95
+          M: 23.95
+          L: 23.95
+          XL: 23.95
+          2XL: 27.95
+
+# Art Prints
+prints:
+  small:
+    name: "8×10 Art Print"
+    dimensions:
+      width: 8
+      height: 10
+      unit: inches
+    pixels:
+      width: 2400
+      height: 3000
+    providers:
+      prodigi:
+        sku: "GLOBAL-FAP-8X10"
+        variants:
+          - id: matte
+            name: "Matte"
+          - id: lustre
+            name: "Lustre"
+        base_cost: 4.50
+
+  medium:
+    name: "11×14 Art Print"
+    dimensions:
+      width: 11
+      height: 14
+      unit: inches
+    pixels:
+      width: 3300
+      height: 4200
+    providers:
+      prodigi:
+        sku: "GLOBAL-FAP-11X14"
+        base_cost: 7.00
+
+  large:
+    name: "18×24 Art Print"
+    dimensions:
+      width: 18
+      height: 24
+      unit: inches
+    pixels:
+      width: 5400
+      height: 7200
+    providers:
+      prodigi:
+        sku: "GLOBAL-FAP-18X24"
+        base_cost: 12.00
+
+# Pricing Rules
+pricing:
+  default_markup: 2.0  # 100% markup (double cost)
+
+  rules:
+    stickers:
+      markup: 2.5  # Higher margin on low-cost items
+      minimum_price: 3.00
+
+    apparel:
+      markup: 1.8
+      minimum_price: 20.00
+
+    prints:
+      markup: 2.0
+      minimum_price: 15.00
+
+  # Round to nearest .99 or .50
+  rounding: nearest_99
+
+# Shipping Profiles
+shipping:
+  prodigi:
+    standard:
+      name: "Standard"
+      days: "5-10"
+    express:
+      name: "Express"
+      days: "2-5"
+      additional_cost: 5.00
+
+  printful:
+    standard:
+      name: "Standard"
+      days: "5-12"
+    express:
+      name: "Express"
+      days: "3-5"
+      additional_cost: 7.00
