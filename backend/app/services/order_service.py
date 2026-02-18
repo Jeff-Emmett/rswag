@@ -14,7 +14,9 @@ from app.models.customer import Customer
 from app.models.cart import Cart
 from app.schemas.order import OrderResponse, OrderItemResponse
 from app.services.flow_service import FlowService
+from app.pod.printful_client import PrintfulClient
 from app.pod.prodigi_client import ProdigiClient
+from app.services.design_service import DesignService
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -181,37 +183,132 @@ class OrderService:
         await self.db.commit()
 
     async def _submit_to_pod(self, order: Order):
-        """Submit order items to Prodigi for fulfillment.
+        """Route order items to the correct POD provider for fulfillment.
 
-        Groups items by POD provider and submits orders.
-        Design images are served via public URL for Prodigi to download.
+        Reads each item's design metadata to determine provider (printful/prodigi),
+        groups items, and submits separate orders per provider.
         """
-        prodigi = ProdigiClient()
-        if not prodigi.enabled:
-            logger.info("Prodigi not configured, skipping POD submission")
-            return
-
-        # Need shipping address for POD — skip if not available
         if not order.shipping_address_line1:
             logger.info(f"Order {order.id} has no shipping address, skipping POD")
             return
 
-        # Collect Prodigi items from order
+        design_service = DesignService()
+        printful_items = []
         prodigi_items = []
+
         for item in order.items:
-            # Build public image URL for Prodigi to download
-            # TODO: Use CDN URL in production; for now use the API endpoint
             image_url = f"https://fungiswag.jeffemmett.com/api/designs/{item.product_slug}/image"
 
-            prodigi_items.append({
-                "sku": item.variant or item.product_slug,
-                "copies": item.quantity,
-                "sizing": "fillPrintArea",
-                "assets": [{"printArea": "default", "url": image_url}],
+            design = await design_service.get_design(item.product_slug)
+            provider = "prodigi"  # default
+            product_sku = item.variant or item.product_slug
+
+            if design and design.products:
+                product_config = design.products[0]
+                provider = product_config.provider
+                product_sku = product_config.sku
+
+            if provider == "printful":
+                # Extract size from variant string (e.g. "71-M" → "M", or just "M")
+                size = item.variant or "M"
+                if "-" in size:
+                    size = size.split("-", 1)[1]
+
+                printful_items.append({
+                    "order_item": item,
+                    "product_id": int(product_sku),
+                    "size": size,
+                    "quantity": item.quantity,
+                    "image_url": image_url,
+                })
+            else:
+                prodigi_items.append({
+                    "order_item": item,
+                    "sku": item.variant or item.product_slug,
+                    "quantity": item.quantity,
+                    "image_url": image_url,
+                })
+
+        if printful_items:
+            await self._submit_to_printful(order, printful_items)
+        if prodigi_items:
+            await self._submit_to_prodigi(order, prodigi_items)
+
+    async def _submit_to_printful(self, order: Order, items: list[dict]):
+        """Submit items to Printful for fulfillment."""
+        printful = PrintfulClient()
+        if not printful.enabled:
+            logger.info("Printful not configured, skipping")
+            return
+
+        order_items = []
+        for item_data in items:
+            variant_id = await printful.resolve_variant_id(
+                product_id=item_data["product_id"],
+                size=item_data["size"],
+            )
+            if not variant_id:
+                logger.error(
+                    f"Could not resolve Printful variant for product "
+                    f"{item_data['product_id']} size {item_data['size']}"
+                )
+                continue
+
+            order_items.append({
+                "catalog_variant_id": variant_id,
+                "quantity": item_data["quantity"],
+                "image_url": item_data["image_url"],
+                "placement": "front_large",
             })
 
-        if not prodigi_items:
+        if not order_items:
             return
+
+        recipient = {
+            "name": order.shipping_name or "",
+            "address1": order.shipping_address_line1 or "",
+            "address2": order.shipping_address_line2 or "",
+            "city": order.shipping_city or "",
+            "state_code": order.shipping_state or "",
+            "country_code": order.shipping_country or "",
+            "zip": order.shipping_postal_code or "",
+            "email": order.shipping_email or "",
+        }
+
+        try:
+            result = await printful.create_order(
+                items=order_items,
+                recipient=recipient,
+            )
+            pod_order_id = str(result.get("id", ""))
+
+            for item_data in items:
+                item_data["order_item"].pod_provider = "printful"
+                item_data["order_item"].pod_order_id = pod_order_id
+                item_data["order_item"].pod_status = "submitted"
+
+            order.status = OrderStatus.PROCESSING.value
+            await self.db.commit()
+            logger.info(f"Submitted order {order.id} to Printful: {pod_order_id}")
+
+        except Exception as e:
+            logger.error(f"Failed to submit order {order.id} to Printful: {e}")
+
+    async def _submit_to_prodigi(self, order: Order, items: list[dict]):
+        """Submit items to Prodigi for fulfillment."""
+        prodigi = ProdigiClient()
+        if not prodigi.enabled:
+            logger.info("Prodigi not configured, skipping")
+            return
+
+        prodigi_items = []
+        for item_data in items:
+            prodigi_items.append({
+                "sku": item_data["sku"],
+                "copies": item_data["quantity"],
+                "sizing": "fillPrintArea",
+                "assets": [{"printArea": "default", "url": item_data["image_url"]}],
+            })
 
         recipient = {
             "name": order.shipping_name or "",
@@ -234,11 +331,10 @@ class OrderService:
             )
             pod_order_id = result.get("id")
 
-            # Update order items with Prodigi order ID
-            for item in order.items:
-                item.pod_provider = "prodigi"
-                item.pod_order_id = pod_order_id
-                item.pod_status = "submitted"
+            for item_data in items:
+                item_data["order_item"].pod_provider = "prodigi"
+                item_data["order_item"].pod_order_id = pod_order_id
+                item_data["order_item"].pod_status = "submitted"
 
             order.status = OrderStatus.PROCESSING.value
             await self.db.commit()
