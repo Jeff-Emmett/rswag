@@ -16,9 +16,10 @@ design_service = DesignService()
 async def list_designs(
     status: str = "active",
     category: str | None = None,
+    space: str | None = None,
 ):
     """List all designs."""
-    designs = await design_service.list_designs(status=status, category=category)
+    designs = await design_service.list_designs(status=status, category=category, space=space)
     return designs
 
 

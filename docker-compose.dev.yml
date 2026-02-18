@@ -16,6 +16,7 @@ services:
       # Mount designs from in-repo designs dir
       - ./designs:/app/designs:ro
       - ./config:/app/config:ro
+      - ./spaces:/app/spaces:ro
     environment:
       - DEBUG=true
       - POD_SANDBOX_MODE=true

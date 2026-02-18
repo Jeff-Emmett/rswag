@@ -1,0 +1,26 @@
+name: "Spore Print Sticker"
+slug: fungi-spore
+description: "Bioluminescent mushroom spore print design. Neon green on deep purple — the signature Fungi Flows aesthetic."
+tags: [fungiflows, mushroom, spore, psychedelic, sticker]
+space: fungiflows
+category: stickers
+created: "2026-02-18"
+author: fungi-flows
+
+source:
+  file: fungi-spore.png
+  format: png
+  dimensions:
+    width: 1200
+    height: 1200
+  dpi: 300
+  color_profile: sRGB
+
+products:
+  - type: sticker
+    provider: prodigi
+    sku: GLOBAL-STI-KIS-4X4
+    variants: [matte, gloss]
+    retail_price: 4.99
+
+status: active

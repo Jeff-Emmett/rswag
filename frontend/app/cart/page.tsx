@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getSpaceIdFromCookie, getCartKey } from "@/lib/spaces";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -30,7 +31,8 @@ export default function CartPage() {
   const [updating, setUpdating] = useState<string | null>(null);
 
   const fetchCart = async () => {
-    const cartId = localStorage.getItem("cart_id");
+    const cartKey = getCartKey(getSpaceIdFromCookie());
+    const cartId = localStorage.getItem(cartKey);
     if (cartId) {
       try {
         const res = await fetch(`${API_URL}/cart/${cartId}`);
@@ -39,7 +41,7 @@ export default function CartPage() {
           setCart(data);
         } else {
           // Cart expired or deleted
-          localStorage.removeItem("cart_id");
+          localStorage.removeItem(cartKey);
           setCart(null);
         }
       } catch {

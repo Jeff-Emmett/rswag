@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     # Paths
     designs_path: str = "/app/designs"
     config_path: str = "/app/config"
+    spaces_path: str = "/app/spaces"
 
     # App
     app_name: str = "rSwag"
@@ -54,6 +55,10 @@ class Settings(BaseSettings):
     @property
     def config_dir(self) -> Path:
         return Path(self.config_path)
+
+    @property
+    def spaces_dir(self) -> Path:
+        return Path(self.spaces_path)
 
     @property
     def cors_origins_list(self) -> list[str]:

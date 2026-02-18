@@ -35,6 +35,7 @@ class Design(BaseModel):
     created: str = ""
     source: DesignSource
     products: list[DesignProduct] = []
+    space: str = "default"
     status: str = "draft"
     image_url: str = ""
 

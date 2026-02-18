@@ -3,9 +3,11 @@ services:
     volumes:
       - /opt/apps/rswag/designs:/app/designs
       - /opt/apps/rswag/config:/app/config:ro
+      - /opt/apps/rswag/spaces:/app/spaces:ro
     environment:
       - DESIGNS_PATH=/app/designs
       - CONFIG_PATH=/app/config
+      - SPACES_PATH=/app/spaces
 
   frontend:
     build:

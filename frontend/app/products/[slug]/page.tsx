@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { getSpaceIdFromCookie, getCartKey } from "@/lib/spaces";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -70,7 +71,7 @@ export default function ProductPage() {
 
   const getOrCreateCart = async (): Promise<string | null> => {
     // Check for existing cart in localStorage
-    let cartId = localStorage.getItem("cart_id");
+    let cartId = localStorage.getItem(getCartKey(getSpaceIdFromCookie()));
 
     if (cartId) {
       // Verify cart still exists
@@ -93,7 +94,7 @@ export default function ProductPage() {
       if (res.ok) {
         const data = await res.json();
         cartId = data.id;
-        localStorage.setItem("cart_id", cartId!);
+        localStorage.setItem(getCartKey(getSpaceIdFromCookie()), cartId!);
         return cartId;
       }
     } catch {

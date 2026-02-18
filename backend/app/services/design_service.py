@@ -30,6 +30,7 @@ class DesignService:
         self,
         status: str = "active",
         category: str | None = None,
+        space: str | None = None,
     ) -> list[Design]:
         """List all designs from the designs directory."""
         designs = []
@@ -51,6 +52,10 @@ class DesignService:
 
                 design = await self._load_design(design_dir, category_dir.name)
                 if design and design.status == status:
+                    # Filter by space if specified
+                    if space and space != "all":
+                        if design.space != space and design.space != "all":
+                            continue
                     designs.append(design)
 
         return designs
@@ -156,6 +161,7 @@ class DesignService:
             created=str(metadata.get("created", "")),
             source=source,
             products=products,
+            space=metadata.get("space", "default"),
             status=metadata.get("status", "draft"),
             image_url=f"/api/designs/{slug}/image",
         )
@@ -164,9 +170,10 @@ class DesignService:
         self,
         category: str | None = None,
         product_type: str | None = None,
+        space: str | None = None,
     ) -> list[Product]:
         """List all products (designs formatted for storefront)."""
-        designs = await self.list_designs(status="active", category=category)
+        designs = await self.list_designs(status="active", category=category, space=space)
         products = []
 
         for design in designs:

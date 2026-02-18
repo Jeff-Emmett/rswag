@@ -13,11 +13,13 @@ design_service = DesignService()
 async def list_products(
     category: str | None = None,
     product_type: str | None = None,
+    space: str | None = None,
 ):
     """List all products (designs with variants flattened for storefront)."""
     products = await design_service.list_products(
         category=category,
         product_type=product_type,
+        space=space,
     )
     return products
 

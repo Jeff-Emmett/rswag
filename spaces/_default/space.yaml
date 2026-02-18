@@ -1,0 +1,36 @@
+id: default
+name: "rSwag"
+tagline: "Merch for the rSpace ecosystem"
+description: "Stickers, shirts, and more — designed by the community, printed on demand."
+domain: "rswag.online"
+footer_text: "rSpace. Infrastructure for the commons."
+
+theme:
+  primary: "195 80% 45%"
+  primary_foreground: "0 0% 100%"
+  secondary: "45 80% 55%"
+  secondary_foreground: "222.2 47.4% 11.2%"
+  background: "0 0% 100%"
+  foreground: "222.2 84% 4.9%"
+  card: "0 0% 100%"
+  card_foreground: "222.2 84% 4.9%"
+  popover: "0 0% 100%"
+  popover_foreground: "222.2 84% 4.9%"
+  muted: "210 40% 96.1%"
+  muted_foreground: "215.4 16.3% 46.9%"
+  accent: "210 40% 96.1%"
+  accent_foreground: "222.2 47.4% 11.2%"
+  destructive: "0 84.2% 60.2%"
+  destructive_foreground: "210 40% 98%"
+  border: "214.3 31.8% 91.4%"
+  input: "214.3 31.8% 91.4%"
+  ring: "195 80% 45%"
+
+design_filter: "all"
+logo_url: null
+
+design_tips:
+  - "Be specific about text you want included"
+  - "Mention colors, mood, and style preferences"
+  - "rSpace themes work great: spatial webs, nodes, commons"
+  - "Generated designs start as drafts — preview before adding to the store"

@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 interface Product {
   slug: string;
@@ -10,12 +13,14 @@ interface Product {
   base_price: number;
 }
 
-async function getProducts(): Promise<Product[]> {
+async function getProducts(spaceId: string): Promise<Product[]> {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/products`,
-      { next: { revalidate: 3600 } }
-    );
+    const params = new URLSearchParams();
+    if (spaceId && spaceId !== "default") {
+      params.set("space", spaceId);
+    }
+    const url = `${API_URL}/products${params.toString() ? `?${params}` : ""}`;
+    const res = await fetch(url, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
     return res.json();
   } catch {
@@ -24,7 +29,9 @@ async function getProducts(): Promise<Product[]> {
 }
 
 export default async function ProductsPage() {
-  const products = await getProducts();
+  const cookieStore = await cookies();
+  const spaceId = cookieStore.get("space_id")?.value || "default";
+  const products = await getProducts(spaceId);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -47,7 +54,7 @@ export default async function ProductsPage() {
               <div className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="aspect-square bg-muted relative overflow-hidden">
                   <img
-                    src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/designs/${product.slug}/image`}
+                    src={`${API_URL}/designs/${product.slug}/image`}
                     alt={product.name}
                     className="object-cover w-full h-full group-hover:scale-105 transition-transform"
                   />

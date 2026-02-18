@@ -1,0 +1,36 @@
+id: fungiflows
+name: "Fungi Flows"
+tagline: "If Hip Hop Ate Magic Mushrooms"
+description: "Psychedelic mushroom merch for the Fungi Flows movement. Hoodies, tees, stickers, and prints — spreading spores of consciousness."
+domain: "fungiflows.rswag.online"
+footer_text: "Fungi Flows. Spreading spores of consciousness."
+
+theme:
+  primary: "51 100% 50%"
+  primary_foreground: "264 30% 6%"
+  secondary: "110 100% 54%"
+  secondary_foreground: "264 30% 6%"
+  background: "264 30% 4%"
+  foreground: "40 30% 92%"
+  card: "264 30% 6%"
+  card_foreground: "40 30% 92%"
+  popover: "264 30% 6%"
+  popover_foreground: "40 30% 92%"
+  muted: "264 20% 12%"
+  muted_foreground: "40 10% 60%"
+  accent: "264 20% 12%"
+  accent_foreground: "40 30% 92%"
+  destructive: "0 62.8% 30.6%"
+  destructive_foreground: "210 40% 98%"
+  border: "264 15% 18%"
+  input: "264 15% 18%"
+  ring: "51 100% 50%"
+
+design_filter: "fungiflows"
+logo_url: null
+
+design_tips:
+  - "Mushroom and mycological imagery works perfectly"
+  - "Include psychedelic, bioluminescent, and fractal elements"
+  - "Pittsburgh hip-hop and music culture references welcome"
+  - "Deep purple, gold, and neon green color palette"
