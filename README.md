@@ -7,7 +7,7 @@ Merchandise store for the **rSpace ecosystem** at **rswag.online**
 - **Frontend**: Next.js 15 + shadcn/ui + Tailwind CSS + Geist font
 - **Backend**: FastAPI + SQLAlchemy + Alembic
 - **Database**: PostgreSQL
-- **Payments**: Stripe Checkout
+- **Payments**: Mollie (EU data residency)
 - **Fulfillment**: Printful (apparel) + Prodigi (stickers/prints)
 - **AI Design**: Gemini API for on-demand design generation
 
@@ -24,7 +24,7 @@ rswag.online
                          │
          ┌───────────────┼───────────────┐
          ▼               ▼               ▼
-    PostgreSQL       Stripe          POD APIs
+    PostgreSQL       Mollie          POD APIs
 ```
 
 ## Development

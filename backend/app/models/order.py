@@ -35,8 +35,12 @@ class Order(Base):
     customer_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("customers.id"), nullable=True
     )
-    stripe_session_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    stripe_payment_intent_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Payment provider info (provider-agnostic)
+    payment_provider: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    payment_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    payment_method: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
     status: Mapped[str] = mapped_column(String(50), default=OrderStatus.PENDING.value)
 
     # Shipping info

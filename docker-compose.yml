@@ -38,8 +38,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://rswag:${DB_PASSWORD:-devpassword}@db:5432/rswag
       - REDIS_URL=redis://redis:6379
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - MOLLIE_API_KEY=${MOLLIE_API_KEY}
       - PRODIGI_API_KEY=${PRODIGI_API_KEY}
       - PRINTFUL_API_TOKEN=${PRINTFUL_API_TOKEN}
       - POD_SANDBOX_MODE=${POD_SANDBOX_MODE:-true}
@@ -49,6 +48,10 @@ services:
       - CONFIG_PATH=/app/config
       - SPACES_PATH=/app/spaces
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - FLOW_SERVICE_URL=${FLOW_SERVICE_URL:-}
+      - FLOW_ID=${FLOW_ID:-}
+      - FLOW_FUNNEL_ID=${FLOW_FUNNEL_ID:-}
+      - FLOW_REVENUE_SPLIT=${FLOW_REVENUE_SPLIT:-0.5}
     volumes:
       - ./designs:/app/designs
       - ./config:/app/config:ro
@@ -73,7 +76,6 @@ services:
       dockerfile: Dockerfile
       args:
         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000/api}
-        - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
     container_name: rswag-frontend
     restart: unless-stopped
     environment:

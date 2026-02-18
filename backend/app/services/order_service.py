@@ -1,5 +1,6 @@
 """Order management service."""
 
+import logging
 from datetime import datetime
 from uuid import UUID
 
@@ -7,10 +8,15 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.config import get_settings
 from app.models.order import Order, OrderItem, OrderStatus
 from app.models.customer import Customer
 from app.models.cart import Cart
 from app.schemas.order import OrderResponse, OrderItemResponse
+from app.services.flow_service import FlowService
+
+logger = logging.getLogger(__name__)
+settings = get_settings()
 
 
 class OrderService:
@@ -87,9 +93,13 @@ class OrderService:
         await self.db.commit()
         return self._order_to_response(order)
 
-    async def handle_successful_payment(self, session: dict):
-        """Handle successful Stripe payment."""
-        cart_id = session.get("metadata", {}).get("cart_id")
+    async def handle_successful_payment(self, payment: dict):
+        """Handle successful Mollie payment.
+
+        Called by the Mollie webhook when payment status is 'paid'.
+        Mollie payment object contains metadata with cart_id.
+        """
+        cart_id = payment.get("metadata", {}).get("cart_id")
         if not cart_id:
             return
 
@@ -103,32 +113,21 @@ class OrderService:
         if not cart or not cart.items:
             return
 
-        # Get or create customer
-        email = session.get("customer_details", {}).get("email", "")
-        customer = await self._get_or_create_customer(email)
-
-        # Get shipping details
-        shipping = session.get("shipping_details", {}) or {}
-        address = shipping.get("address", {}) or {}
+        # Extract amount from Mollie payment
+        amount = payment.get("amount", {})
+        total = float(amount.get("value", "0"))
+        currency = amount.get("currency", "USD")
 
         # Create order
         order = Order(
-            customer_id=customer.id if customer else None,
-            stripe_session_id=session.get("id"),
-            stripe_payment_intent_id=session.get("payment_intent"),
+            payment_provider="mollie",
+            payment_id=payment.get("id"),
+            payment_method=payment.get("method"),
             status=OrderStatus.PAID.value,
-            shipping_name=shipping.get("name"),
-            shipping_email=email,
-            shipping_address_line1=address.get("line1"),
-            shipping_address_line2=address.get("line2"),
-            shipping_city=address.get("city"),
-            shipping_state=address.get("state"),
-            shipping_postal_code=address.get("postal_code"),
-            shipping_country=address.get("country"),
-            subtotal=float(session.get("amount_subtotal", 0)) / 100,
-            shipping_cost=float(session.get("shipping_cost", {}).get("amount_total", 0)) / 100,
-            total=float(session.get("amount_total", 0)) / 100,
-            currency=session.get("currency", "usd").upper(),
+            shipping_email=payment.get("metadata", {}).get("email", ""),
+            subtotal=total,
+            total=total,
+            currency=currency,
             paid_at=datetime.utcnow(),
         )
         self.db.add(order)
@@ -148,6 +147,9 @@ class OrderService:
             self.db.add(order_item)
 
         await self.db.commit()
+
+        # Route revenue margin to TBFF flow → bonding curve
+        await self._deposit_revenue_to_flow(order)
 
         # TODO: Submit to POD providers
         # TODO: Send confirmation email
@@ -174,6 +176,34 @@ class OrderService:
             )
         )
         await self.db.commit()
+
+    async def _deposit_revenue_to_flow(self, order: Order):
+        """Calculate margin and deposit to TBFF flow for bonding curve funding.
+
+        Revenue split:
+          total sale - POD cost estimate = margin
+          margin × flow_revenue_split = amount deposited to flow
+          flow → Transak on-ramp → USDC → bonding curve → $MYCO
+        """
+        split = settings.flow_revenue_split
+        if split <= 0:
+            return
+
+        total = float(order.total) if order.total else 0
+        if total <= 0:
+            return
+
+        # Revenue split: configurable fraction of total goes to flow
+        # (POD costs + operational expenses kept as fiat remainder)
+        flow_amount = round(total * split, 2)
+
+        flow_service = FlowService()
+        await flow_service.deposit_revenue(
+            amount=flow_amount,
+            currency=order.currency or "USD",
+            order_id=str(order.id),
+            description=f"rSwag sale revenue split ({split:.0%} of ${total:.2f})",
+        )
 
     async def _get_or_create_customer(self, email: str) -> Customer | None:
         """Get or create customer by email."""

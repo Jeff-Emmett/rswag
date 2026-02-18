@@ -2,14 +2,14 @@
 
 ## Project Overview
 
-E-commerce platform for rSpace ecosystem merchandise (stickers, shirts, prints) with Stripe payments and print-on-demand fulfillment via Printful and Prodigi. Part of the rSpace ecosystem (rspace.online).
+E-commerce platform for rSpace ecosystem merchandise (stickers, shirts, prints) with Mollie payments and print-on-demand fulfillment via Printful and Prodigi. Part of the rSpace ecosystem (rspace.online).
 
 ## Architecture
 
 - **Frontend**: Next.js 15 App Router, shadcn/ui, Tailwind CSS, Geist font
 - **Backend**: FastAPI, SQLAlchemy, Alembic
 - **Database**: PostgreSQL
-- **Payments**: Stripe Checkout (redirect flow)
+- **Payments**: Mollie (redirect flow, Dutch data residency)
 - **Fulfillment**: Printful (apparel), Prodigi (stickers/prints)
 - **AI Design**: Gemini API for design generation
 - **Deployment**: Docker on Netcup RS 8000, Traefik routing
@@ -21,7 +21,7 @@ E-commerce platform for rSpace ecosystem merchandise (stickers, shirts, prints) 
 | `backend/app/api/` | FastAPI route handlers |
 | `backend/app/models/` | SQLAlchemy ORM models |
 | `backend/app/schemas/` | Pydantic request/response schemas |
-| `backend/app/services/` | Business logic (stripe, pod, orders, spaces) |
+| `backend/app/services/` | Business logic (mollie, pod, orders, spaces) |
 | `backend/app/pod/` | POD provider clients |
 | `frontend/app/` | Next.js App Router pages |
 | `frontend/components/` | React components |
@@ -59,12 +59,12 @@ Each design has a `metadata.yaml` with name, description, products, variants, pr
 - `GET /api/products` - List products with variants (optional: `?space=X`)
 - `POST /api/cart` - Create cart
 - `GET/POST/DELETE /api/cart/{id}/items` - Cart operations
-- `POST /api/checkout/session` - Create Stripe checkout
+- `POST /api/checkout/session` - Create Mollie payment
 - `GET /api/orders/{id}` - Order status (requires email)
 - `POST /api/design/generate` - AI design generation
 
 ### Webhooks
-- `POST /api/webhooks/stripe` - Stripe payment events
+- `POST /api/webhooks/mollie` - Mollie payment events
 - `POST /api/webhooks/prodigi` - Prodigi fulfillment updates
 - `POST /api/webhooks/printful` - Printful fulfillment updates
 

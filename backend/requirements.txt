@@ -19,8 +19,8 @@ passlib[bcrypt]>=1.7.4
 # HTTP Client
 httpx>=0.26.0
 
-# Stripe
-stripe>=7.0.0
+# Payments (Mollie)
+mollie-api-python>=3.0.0
 
 # Config & Utils
 pyyaml>=6.0.0

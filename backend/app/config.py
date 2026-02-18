@@ -21,15 +21,19 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6379"
 
-    # Stripe
-    stripe_secret_key: str = ""
-    stripe_publishable_key: str = ""
-    stripe_webhook_secret: str = ""
+    # Mollie
+    mollie_api_key: str = ""
 
     # POD Providers
     prodigi_api_key: str = ""
     printful_api_token: str = ""
     pod_sandbox_mode: bool = True
+
+    # Flow Service (TBFF revenue split → bonding curve)
+    flow_service_url: str = ""
+    flow_id: str = ""
+    flow_funnel_id: str = ""
+    flow_revenue_split: float = 0.5  # fraction of margin routed to flow (0.0-1.0)
 
     # Auth
     jwt_secret: str = "dev-secret-change-in-production"

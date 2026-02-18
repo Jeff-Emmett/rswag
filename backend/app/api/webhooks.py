@@ -1,51 +1,49 @@
-"""Webhook endpoints for Stripe and POD providers."""
+"""Webhook endpoints for Mollie and POD providers."""
 
 from fastapi import APIRouter, Request, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.config import get_settings
-from app.services.stripe_service import StripeService
+from app.services.mollie_service import MollieService
 from app.services.order_service import OrderService
 
 router = APIRouter()
-settings = get_settings()
 
 
-def get_stripe_service() -> StripeService:
-    return StripeService()
+def get_mollie_service() -> MollieService:
+    return MollieService()
 
 
 def get_order_service(db: AsyncSession = Depends(get_db)) -> OrderService:
     return OrderService(db)
 
 
-@router.post("/stripe")
-async def stripe_webhook(
+@router.post("/mollie")
+async def mollie_webhook(
     request: Request,
-    stripe_service: StripeService = Depends(get_stripe_service),
+    mollie_service: MollieService = Depends(get_mollie_service),
     order_service: OrderService = Depends(get_order_service),
 ):
-    """Handle Stripe webhook events."""
-    payload = await request.body()
-    sig_header = request.headers.get("stripe-signature")
+    """Handle Mollie webhook events.
 
-    if not sig_header:
-        raise HTTPException(status_code=400, detail="Missing signature")
+    Mollie sends a POST with form data containing just the payment ID.
+    We then fetch the full payment details from Mollie's API to verify status.
+    """
+    form = await request.form()
+    payment_id = form.get("id")
 
-    try:
-        event = stripe_service.verify_webhook(payload, sig_header)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    if not payment_id:
+        raise HTTPException(status_code=400, detail="Missing payment id")
 
-    # Handle events
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
-        await order_service.handle_successful_payment(session)
+    # Fetch payment from Mollie API (this IS the verification — no signature needed)
+    payment = await mollie_service.get_payment(payment_id)
 
-    elif event["type"] == "payment_intent.payment_failed":
-        # Log failure, maybe send notification
-        pass
+    status = payment.get("status")
+    if status == "paid":
+        await order_service.handle_successful_payment(payment)
+    elif status in ("failed", "canceled", "expired"):
+        # Log but no action needed
+        print(f"Mollie payment {payment_id} status: {status}")
 
     return {"status": "ok"}
 
