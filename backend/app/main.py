@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.api import designs, products, cart, checkout, orders, webhooks, health, design_generator, spaces
+from app.api import designs, products, cart, checkout, orders, webhooks, health, design_generator, upload, spaces
 from app.api.admin import router as admin_router
 
 settings = get_settings()
@@ -50,6 +50,7 @@ app.include_router(checkout.router, prefix="/api/checkout", tags=["checkout"])
 app.include_router(orders.router, prefix="/api/orders", tags=["orders"])
 app.include_router(webhooks.router, prefix="/api/webhooks", tags=["webhooks"])
 app.include_router(design_generator.router, prefix="/api/design", tags=["design-generator"])
+app.include_router(upload.router, prefix="/api/design", tags=["upload"])
 app.include_router(spaces.router, prefix="/api/spaces", tags=["spaces"])
 app.include_router(admin_router, prefix="/api/admin", tags=["admin"])
 

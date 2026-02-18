@@ -74,6 +74,12 @@ export default async function HomePage() {
           >
             Design Your Own
           </Link>
+          <Link
+            href="/upload"
+            className="inline-flex items-center justify-center rounded-md border border-primary px-8 py-3 text-lg font-medium text-primary hover:bg-primary/10 transition-colors"
+          >
+            Upload Your Own
+          </Link>
         </div>
       </div>
 

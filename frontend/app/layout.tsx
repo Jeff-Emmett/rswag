@@ -72,6 +72,9 @@ export default async function RootLayout({
                 <a href="/design" className="px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors">
                   Design Swag
                 </a>
+                <a href="/upload" className="px-3 py-1.5 border border-primary text-primary rounded-md text-sm font-medium hover:bg-primary/10 transition-colors">
+                  Upload Swag
+                </a>
                 <a href="/cart" className="hover:text-primary">
                   Cart
                 </a>

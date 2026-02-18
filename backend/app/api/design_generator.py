@@ -183,15 +183,26 @@ status: draft
     )
 
 
+def find_design_dir(slug: str) -> Path | None:
+    """Find a design directory by slug, searching all categories."""
+    for category_dir in settings.designs_dir.iterdir():
+        if not category_dir.is_dir():
+            continue
+        design_dir = category_dir / slug
+        if design_dir.exists() and (design_dir / "metadata.yaml").exists():
+            return design_dir
+    return None
+
+
 @router.post("/{slug}/activate")
 async def activate_design(slug: str):
     """Activate a draft design to make it visible in the store."""
 
-    design_dir = settings.designs_dir / "stickers" / slug
-    metadata_path = design_dir / "metadata.yaml"
-
-    if not metadata_path.exists():
+    design_dir = find_design_dir(slug)
+    if not design_dir:
         raise HTTPException(status_code=404, detail="Design not found")
+
+    metadata_path = design_dir / "metadata.yaml"
 
     # Read and update metadata
     content = metadata_path.read_text()
@@ -209,11 +220,11 @@ async def delete_design(slug: str):
     """Delete a design (only drafts can be deleted)."""
     import shutil
 
-    design_dir = settings.designs_dir / "stickers" / slug
-    metadata_path = design_dir / "metadata.yaml"
-
-    if not metadata_path.exists():
+    design_dir = find_design_dir(slug)
+    if not design_dir:
         raise HTTPException(status_code=404, detail="Design not found")
+
+    metadata_path = design_dir / "metadata.yaml"
 
     # Check if draft
     content = metadata_path.read_text()
