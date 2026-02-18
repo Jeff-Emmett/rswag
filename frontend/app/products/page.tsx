@@ -13,6 +13,14 @@ interface Product {
   base_price: number;
 }
 
+// Map product types to mockup types
+function getMockupType(productType: string): string {
+  if (productType.includes("shirt") || productType.includes("tee") || productType.includes("hoodie")) return "shirt";
+  if (productType.includes("sticker")) return "sticker";
+  if (productType.includes("print")) return "print";
+  return "shirt";
+}
+
 async function getProducts(spaceId: string): Promise<Product[]> {
   try {
     const params = new URLSearchParams();
@@ -54,7 +62,7 @@ export default async function ProductsPage() {
               <div className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="aspect-square bg-muted relative overflow-hidden">
                   <img
-                    src={`${API_URL}/designs/${product.slug}/image`}
+                    src={`${API_URL}/designs/${product.slug}/mockup?type=${getMockupType(product.product_type)}`}
                     alt={product.name}
                     className="object-cover w-full h-full group-hover:scale-105 transition-transform"
                   />

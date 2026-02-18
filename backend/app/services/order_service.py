@@ -14,6 +14,7 @@ from app.models.customer import Customer
 from app.models.cart import Cart
 from app.schemas.order import OrderResponse, OrderItemResponse
 from app.services.flow_service import FlowService
+from app.pod.prodigi_client import ProdigiClient
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -151,7 +152,9 @@ class OrderService:
         # Route revenue margin to TBFF flow → bonding curve
         await self._deposit_revenue_to_flow(order)
 
-        # TODO: Submit to POD providers
+        # Submit to POD providers
+        await self._submit_to_pod(order)
+
         # TODO: Send confirmation email
 
     async def update_pod_status(
@@ -176,6 +179,73 @@ class OrderService:
             )
         )
         await self.db.commit()
+
+    async def _submit_to_pod(self, order: Order):
+        """Submit order items to Prodigi for fulfillment.
+
+        Groups items by POD provider and submits orders.
+        Design images are served via public URL for Prodigi to download.
+        """
+        prodigi = ProdigiClient()
+        if not prodigi.enabled:
+            logger.info("Prodigi not configured, skipping POD submission")
+            return
+
+        # Need shipping address for POD — skip if not available
+        if not order.shipping_address_line1:
+            logger.info(f"Order {order.id} has no shipping address, skipping POD")
+            return
+
+        # Collect Prodigi items from order
+        prodigi_items = []
+        for item in order.items:
+            # Build public image URL for Prodigi to download
+            # TODO: Use CDN URL in production; for now use the API endpoint
+            image_url = f"https://fungiswag.jeffemmett.com/api/designs/{item.product_slug}/image"
+
+            prodigi_items.append({
+                "sku": item.variant or item.product_slug,
+                "copies": item.quantity,
+                "sizing": "fillPrintArea",
+                "assets": [{"printArea": "default", "url": image_url}],
+            })
+
+        if not prodigi_items:
+            return
+
+        recipient = {
+            "name": order.shipping_name or "",
+            "email": order.shipping_email or "",
+            "address": {
+                "line1": order.shipping_address_line1 or "",
+                "line2": order.shipping_address_line2 or "",
+                "townOrCity": order.shipping_city or "",
+                "stateOrCounty": order.shipping_state or "",
+                "postalOrZipCode": order.shipping_postal_code or "",
+                "countryCode": order.shipping_country or "",
+            },
+        }
+
+        try:
+            result = await prodigi.create_order(
+                items=prodigi_items,
+                recipient=recipient,
+                metadata={"rswag_order_id": str(order.id)},
+            )
+            pod_order_id = result.get("id")
+
+            # Update order items with Prodigi order ID
+            for item in order.items:
+                item.pod_provider = "prodigi"
+                item.pod_order_id = pod_order_id
+                item.pod_status = "submitted"
+
+            order.status = OrderStatus.PROCESSING.value
+            await self.db.commit()
+            logger.info(f"Submitted order {order.id} to Prodigi: {pod_order_id}")
+
+        except Exception as e:
+            logger.error(f"Failed to submit order {order.id} to Prodigi: {e}")
 
     async def _deposit_revenue_to_flow(self, order: Order):
         """Calculate margin and deposit to TBFF flow for bonding curve funding.

@@ -17,6 +17,7 @@ services:
       - ./designs:/app/designs:ro
       - ./config:/app/config:ro
       - ./spaces:/app/spaces:ro
+      - ./frontend/public/mockups:/app/mockups:ro
     environment:
       - DEBUG=true
       - POD_SANDBOX_MODE=true
